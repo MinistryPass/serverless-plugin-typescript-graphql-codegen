@@ -1,5 +1,5 @@
 {
-  "name": "serverless-plugin-typescript-graphql-codegen",
+  "name": "@ministrypass/serverless-plugin-typescript-graphql-codegen",
   "version": "2.1.0",
   "license": "MIT",
   "main": "dist/src/index.js",
