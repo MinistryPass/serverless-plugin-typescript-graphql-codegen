@@ -4,7 +4,8 @@ import * as _ from 'lodash'
 import * as globby from 'globby'
 
 import * as typescript from './typescript'
-import { watchFiles } from './watchFiles'
+import {watchFiles} from './watchFiles'
+import {generate} from '@graphql-codegen/cli'
 
 const SERVERLESS_FOLDER = '.serverless'
 const BUILD_FOLDER = '.build'
@@ -39,23 +40,27 @@ export class TypeScriptPlugin {
 
     this.hooks = {
       'before:run:run': async () => {
+        await this.generateGraphqlTypes()
         await this.compileTs()
         await this.copyExtras()
         await this.copyDependencies()
       },
       'before:offline:start': async () => {
+        await this.generateGraphqlTypes()
         await this.compileTs()
         await this.copyExtras()
         await this.copyDependencies()
         this.watchAll()
       },
       'before:offline:start:init': async () => {
+        await this.generateGraphqlTypes()
         await this.compileTs()
         await this.copyExtras()
         await this.copyDependencies()
         this.watchAll()
       },
       'before:package:createDeploymentArtifacts': async () => {
+        await this.generateGraphqlTypes()
         await this.compileTs()
         await this.copyExtras()
         await this.copyDependencies(true)
@@ -64,6 +69,7 @@ export class TypeScriptPlugin {
         await this.cleanup()
       },
       'before:deploy:function:packageFunction': async () => {
+        await this.generateGraphqlTypes()
         await this.compileTs()
         await this.copyExtras()
         await this.copyDependencies(true)
@@ -72,11 +78,12 @@ export class TypeScriptPlugin {
         await this.cleanup()
       },
       'before:invoke:local:invoke': async () => {
-        const emitedFiles = await this.compileTs()
+        await this.generateGraphqlTypes()
+        const emittedFiles = await this.compileTs()
         await this.copyExtras()
         await this.copyDependencies()
         if (this.isWatching) {
-          emitedFiles.forEach(filename => {
+          emittedFiles.forEach(filename => {
             const module = require.resolve(path.resolve(this.originalServicePath, filename))
             delete require.cache[module]
           })
@@ -126,6 +133,12 @@ export class TypeScriptPlugin {
     }
   }
 
+  get graphqlFilePaths() {
+    return ['gql', 'graphql'].map(
+        (extension) => `${process.cwd()}/**/*.${extension}`
+    )
+  }
+
   async watchFunction(): Promise<void> {
     if (this.isWatching) {
       return
@@ -136,21 +149,60 @@ export class TypeScriptPlugin {
 
     this.isWatching = true
     await new Promise((resolve, reject) => {
-      watchFiles(this.rootFileNames, this.originalServicePath, () => {
-        this.serverless.pluginManager.spawn('invoke:local').catch(reject)
-      })
+      watchFiles(
+        this.rootFileNames,
+        this.originalServicePath,
+        () => {
+          this.serverless.pluginManager.spawn('invoke:local').catch(reject)
+        },
+        this.generateGraphqlTypes.bind(this),
+        this.graphqlFilePaths
+      )
     })
   }
 
-  async watchAll(): Promise<void> {
+  watchAll(): Promise<void> {
     if (this.isWatching) {
       return
     }
 
-    this.serverless.cli.log(`Watching typescript files...`)
+    this.serverless.cli.log(`Watching typescript and graphql files...`)
 
     this.isWatching = true
-    watchFiles(this.rootFileNames, this.originalServicePath, this.compileTs.bind(this))
+    // attach function here
+    watchFiles(
+      this.rootFileNames,
+      this.originalServicePath,
+      this.compileTs.bind(this),
+      this.generateGraphqlTypes.bind(this),
+      this.graphqlFilePaths
+    )
+  }
+
+  async generateGraphqlTypes(): Promise<void> {
+    this.serverless.cli.log('Generating graphql types...')
+
+    await generate(
+      {
+        schema: this.graphqlFilePaths,
+        generates: {
+          [process.cwd() + '/src/generated/graphql.ts']: {
+            plugins: ['typescript'],
+            config: {
+              skipTypename: true,
+              typesPrefix: 'I',
+              enumPrefix: false,
+              declarationKind: 'interface',
+              namingConvention: {
+                typeNames: 'pascal-case#pascalCase',
+                enumValues: 'upper-case#upperCase',
+              }
+            }
+          },
+        },
+      },
+      true
+    )
   }
 
   async compileTs(): Promise<string[]> {

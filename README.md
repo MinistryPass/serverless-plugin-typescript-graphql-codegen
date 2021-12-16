@@ -1,9 +1,9 @@
-# serverless-plugin-typescript
+# serverless-plugin-typescript-graphql-codegen
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com) [![npm version](https://badge.fury.io/js/serverless-plugin-typescript.svg)](https://badge.fury.io/js/serverless-plugin-typescript) [![Build Status](https://travis-ci.org/prisma/serverless-plugin-typescript.svg?branch=master)](https://travis-ci.org/prisma/serverless-plugin-typescript)
 
 _Originally developed by [Prisma Labs](https://github.com/prisma-labs/), now maintained in scope of [Serverless, Inc](https://www.serverless.com/)_
 
-Serverless plugin for zero-config Typescript support
+Serverless plugin for zero-config Typescript support with [graphql codegen](https://graphql-code-generator.com/)
 
 
 ## Features
@@ -16,17 +16,11 @@ Serverless plugin for zero-config Typescript support
 
 ## Install
 
-```sh
-yarn add --dev serverless-plugin-typescript typescript
-# or
-npm install -D serverless-plugin-typescript typescript
-```
-
 Add the following plugin to your `serverless.yml`:
 
 ```yaml
 plugins:
-  - serverless-plugin-typescript
+  - serverless-plugin-typescript-graphql-codegen
 ```
 
 ## Configure
