@@ -6,6 +6,7 @@ import * as globby from 'globby'
 import * as typescript from './typescript'
 import {watchFiles} from './watchFiles'
 import {generate} from '@graphql-codegen/cli'
+import {getCodegenConfig} from "./codegen";
 
 const SERVERLESS_FOLDER = '.serverless'
 const BUILD_FOLDER = '.build'
@@ -182,27 +183,21 @@ export class TypeScriptPlugin {
   async generateGraphqlTypes(): Promise<void> {
     this.serverless.cli.log('Generating graphql types...')
 
-    await generate(
-      {
-        schema: this.graphqlFilePaths,
-        generates: {
-          [process.cwd() + '/src/generated/graphql.ts']: {
-            plugins: ['typescript'],
-            config: {
-              skipTypename: true,
-              typesPrefix: 'I',
-              enumPrefix: false,
-              declarationKind: 'interface',
-              namingConvention: {
-                typeNames: 'pascal-case#pascalCase',
-                enumValues: 'upper-case#upperCase',
-              }
-            }
-          },
-        },
-      },
-      true
+    let codegenConfigFileLocation: string | undefined
+    if (
+      this.serverless.service.custom !== undefined
+      && this.serverless.service.custom.serverlessPluginGraphQLCodegen !== undefined
+    ) {
+      codegenConfigFileLocation = this.serverless.service.custom.serverlessPluginGraphQLCodegen.codegenConfigFileLocation
+    }
+
+    const codegenConfig = getCodegenConfig(
+      this.serverless.config.servicePath,
+      codegenConfigFileLocation,
+      this.isWatching ? null : this.serverless.cli
     )
+
+    await generate(codegenConfig, true)
   }
 
   async compileTs(): Promise<string[]> {

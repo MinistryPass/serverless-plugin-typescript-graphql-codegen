@@ -18,6 +18,9 @@ declare namespace Serverless {
       package: Serverless.Package
       getAllFunctions(): string[]
       custom?: {
+        serverlessPluginGraphQLCodegen?: {
+          codegenConfigFileLocation: string
+        },
         serverlessPluginTypescript?: {
           tsConfigFileLocation: string
         }
