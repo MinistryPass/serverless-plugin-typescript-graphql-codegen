@@ -44,7 +44,7 @@ export async function watchFiles(
     watchedFiles = newWatchFiles
   }
 
-  const watchGraphqlCallback = (changedFilePath) => async(
+  const watchGraphqlCallback = (changedFilePath) => async (
     curr: Stats,
     prev: Stats
   ) => {
