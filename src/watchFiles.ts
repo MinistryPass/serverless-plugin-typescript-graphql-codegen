@@ -28,10 +28,6 @@ export async function watchFiles(
   let watchedFiles = typescript.getSourceFiles(rootFileNames, tsConfig)
   let watchedGraphqlFiles = await globby(graphqlFilePaths)
 
-  watchedFiles.forEach(fileName => {
-    watchFile(fileName, { persistent: true, interval: 250 }, watchCallback)
-  })
-
   const watchCallback = (curr: Stats, prev: Stats) => {
     // Check timestamp
     if (+curr.mtime <= +prev.mtime) {
@@ -43,6 +39,10 @@ export async function watchFiles(
     determineNewWatchFiles(watchedFiles, newWatchFiles, generateGraphqlTypes)
     watchedFiles = newWatchFiles
   }
+
+  watchedFiles.forEach(fileName => {
+    watchFile(fileName, { persistent: true, interval: 250 }, watchCallback)
+  })
 
   const watchGraphqlCallback = (changedFilePath) => async (
     curr: Stats,
