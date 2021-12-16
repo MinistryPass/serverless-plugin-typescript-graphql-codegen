@@ -134,7 +134,7 @@ export class TypeScriptPlugin {
   }
 
   get graphqlFilePaths() {
-    return ['gql', 'graphql'].map(
+    return ['gql', 'graphql', 'type.ts'].map(
         (extension) => `${process.cwd()}/**/*.${extension}`
     )
   }
